@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Stack, Typography, TextField, Button } from "@mui/material";
 import HackingAnimation from "./components/HackingAnimation";
 
@@ -12,7 +12,7 @@ export default function Assistant() {
     },
   ]);
   const [message, setMessage] = useState("");
-  const [displayedText, setDisplayedText] = useState("");
+  const chatContainerRef = useRef(null); // Reference for the chat container
 
   const sendMessage = async () => {
     if (!message.trim()) return; // Prevent empty messages
@@ -49,6 +49,14 @@ export default function Assistant() {
       console.error("Error while sending the message:", error);
     }
   };
+
+  useEffect(() => {
+    // Scroll to the bottom of the chat container whenever messages change
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <Stack
@@ -132,6 +140,7 @@ export default function Assistant() {
 
         {/* Chat Messages */}
         <Stack
+          ref={chatContainerRef} // Reference to the chat container
           direction="column"
           flexGrow={1}
           overflow="auto"
@@ -148,48 +157,16 @@ export default function Assistant() {
               }
             >
               <Box
-                key={index}
                 p={2}
                 borderRadius="10px"
                 width="fit-content"
                 maxWidth="80%"
                 sx={{
-                  display: "flex",
-                  alignItems: "flex-start", // Align items to the top
-                  gap: "8px", // Add consistent gap between icon and text
                   color: msg.role === "assistant" ? "#212529" : "#212529",
                   backgroundColor:
                     msg.role === "assistant" ? "#f8f9fa" : "#ced4da",
                 }}
               >
-                {/* Render the icon only for assistant responses */}
-                {msg.role === "assistant" && (
-                  <Box
-                    component="span"
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      alignSelf: "flex-start", // Align the icon to the top
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="#228B22" // Set icon color
-                      width="20"
-                      height="20"
-                      style={{ flexShrink: 0 }} // Prevent resizing due to container changes
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.848 2.771A49.144 49.144 0 0 1 12 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 0 1-3.476.383.39.39 0 0 0-.297.17l-2.755 4.133a.75.75 0 0 1-1.248 0l-2.755-4.133a.39.39 0 0 0-.297-.17 48.9 48.9 0 0 1-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97ZM6.75 8.25a.75.75 0 0 1 .75-.75h9a.75.75 0 0 1 0 1.5h-9a.75.75 0 0 1-.75-.75Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H7.5Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </Box>
-                )}
-                {/* Message Content */}
                 <Typography>{msg.content}</Typography>
               </Box>
             </Box>
@@ -203,7 +180,11 @@ export default function Assistant() {
             fullWidth
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            aria-label="Type your message here"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage();
+              }
+            }}
             sx={{
               input: { color: "#212529" },
               "& .MuiOutlinedInput-root fieldset": { borderColor: "#212529" },
@@ -212,7 +193,6 @@ export default function Assistant() {
           <Button
             variant="contained"
             onClick={sendMessage}
-            aria-label="Send message"
             sx={{
               backgroundColor: "#212529",
               color: "#f8f9fa",
